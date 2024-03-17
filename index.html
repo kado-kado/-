@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>通話</title>
+<script src="https://cdn.webrtc.ecl.ntt.com/skyway-latest.js"></script>
+</head>
+<body>
+<h1>通話</h1>
+<div id="local-audio"></div>
+<div id="remote-audios"></div>
+<button onclick="startCall()">通話開始</button>
+<button onclick="endCall()">通話終了</button>
+
+<script>
+const apiKey = 'YOUR_SKYWAY_API_KEY';
+const peer = new Peer({ key: apiKey });
+const localAudio = document.getElementById('local-audio');
+
+function startCall() {
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      localAudio.srcObject = stream;
+      showRemoteAudios(stream);
+      peer.call('remote-peer-id', stream);
+    })
+    .catch(error => console.error('getUserMedia error:', error));
+}
+
+function showRemoteAudios(stream) {
+  peer.on('call', call => {
+    call.answer(stream);
+    const remoteAudio = document.createElement('audio');
+    call.on('stream', remoteStream => {
+      remoteAudio.srcObject = remoteStream;
+      remoteAudio.autoplay = true;
+      document.getElementById('remote-audios').appendChild(remoteAudio);
+    });
+  });
+}
+
+function endCall() {
+  peer.destroy();
+  localAudio.srcObject.getTracks().forEach(track => track.stop());
+}
+</script>
+</body>
+</html>
